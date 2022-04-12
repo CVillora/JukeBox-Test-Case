@@ -243,7 +243,7 @@ in order to know what device is playing these songs we will need to include at l
 | PaymentId (FK) |
 | OccurredAt |
 
-Finally, our calculated **Sales** table. We don't have an event that tell us when a sale is made so we need *to generate* it ourselves from the events we receive.\
+Finally, our calculated **Sales** table. We don't have an event that tell us when a sale is made so we need *to generate* it ourselves from the events we receive.
 
 The way to populate this table can vary, from a stored procedure to a dbt script that checks both of the conditions we have in order to make a sale.
 An example of how we could build this table would be:
@@ -303,7 +303,7 @@ SELECT Agents.Name,
   ORDER BY SongsPlayed.Total DESC
   ```
 
-- 3.1 Cash received over time
+- 3.1 `Cash received over time`
 
 ```sql
 SELECT SUM(Amount) AS TotalCashReceived,
@@ -312,7 +312,7 @@ SELECT SUM(Amount) AS TotalCashReceived,
   GROUP BY OccurredAt
 ```
 
-- 3.2 Cash spent over time
+- 3.2 `Cash spent over time`
 
 ```sql
 SELECT SUM(Price) AS TotalSpent,
@@ -321,8 +321,8 @@ SELECT SUM(Price) AS TotalSpent,
   GROUP BY OccurredAt
 ```
 
-- 3.3 Forecast of the above\
-Is it a moving average a forecast? do they want a linear regresion? for this particular point it would be better to speak with Finance team and get alignment on the expectations around forecasts, so that we all talk about ubiquitous language when it comes to forecasting.
+- 3.3 `Forecast` of the above\
+Is it a moving average a forecast? do they want a linear regresion? for this particular point it would be better to speak with Finance team and get alignment on the expectations around forecasts, so that we all talk about *ubiquitous language* when it comes to forecasting.
 This is the point where we'll benefit from talking with Data Scientists and learn from them. However, assuming that I cannot get help from anyone and I have to do this task by myself I would go for
 the **moving average calculation** as I think this calculation will bring a good perspective of the cash received/spent along the time. Giving us the opportunity to foresee possible trends.
 This two scripts are calculating a 15 days moving average from each of the tables:
@@ -340,7 +340,7 @@ SELECT Price,
 FROM Devices
 ```
 
-- 3.4 cash received vs expected cash received\
+- 3.4 `cash received` vs `expected cash received`\
  If we consider expected **cash received** as the minimum cash received to cover the cost of the **device** we could make a calculation to get the `net cash`.\
  Then if the value is negative, that means the payment done to the account is not enough to cover the cost of the device so at least another payment has to be done.
 
@@ -352,7 +352,7 @@ SELECT SUM(Amount) - SUM(Price) as NetCash
   GROUP BY Payments.OccurredAt
 ```
 
-4) Sales over time for "MusicMaker3000" and comparison against other products
+4) `Sales over time` for "MusicMaker3000" and comparison against other products
 ```sql
 SELECT COUNT(*) AS Sales,
 	   Devices.Name,
@@ -362,10 +362,11 @@ SELECT COUNT(*) AS Sales,
   GROUP BY Devices.Name, Sales.OccurredAt
   ```
 
-5) In order to make this model production ready there are a few questions to be clarified which I think we should tackle as a team first:
+5) Make this `production ready`\
+In order to make this model production ready there are a few questions to be clarified which I think we should tackle as a team first:
 - Can customers have more than one location?
 - Payments are linked to customers, what about devices? can we link payments to devices?\
-At the moment, **PaymentReceived** event doesn't have any property that tell us who has made the payment. We will need to talk to the backend team reponsible of the payment events\
+At the moment, **PaymentReceived** event doesn't have any property that tell us who has made the payment. We will need to talk to the backend team reponsible of the payment events
 and find a way to include any sort of customer/device reference.
 - We have a similar case with the **songsListened** event, we don't have a way from the event to link what devices has played the song.\
 I will need to understand if this is on purpose on we are missing something.
@@ -394,7 +395,7 @@ This process can help us to double check our indexing strategy or the way we str
 
 Finally, another point to take into account will be showing and sharing our model with the teams that are going to consume it. Explain what we have done, how they can use it,
 and let them play with it by themselves. Sometimes others will bring questions or cases we haven't thought about so it's a good trial for us.
-Besides, if they are using tool like Looker to grab data from the model is a good time to test things like connectivity, permissions, security, etc.
+Besides, if they are using tool like `Looker` to grab data from the model is a good time to test things like **connectivity**, **permissions**, **security**, etc.
 Having monitoring helps a lot here, so we can track a "real" usage of our model.
 
 If after all these steps we are happy with the results, we should be able to replicate our pipeline in a production environment painlessly.
