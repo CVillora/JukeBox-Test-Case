@@ -288,7 +288,7 @@ SELECT COUNT(*) AS Sales
 FROM Sales
 ```
 
-2) Reward agent who sold the most used device (based on songs played by month)
+2) Reward agent who `sold the most used device` (based on songs played by month)
 
 ```sql
 SELECT Agents.Name,
@@ -299,7 +299,7 @@ SELECT Agents.Name,
     INNER JOIN Device ON Allocations.DeviceId = Devices.Id
     INNER JOIN SongsPlayed ON Devices.Id = SongsPlayed.DeviceId
   GROUP BY Agents.Name,
-		   MONTH(SongsPlayed.OccurredAt)
+	       MONTH(SongsPlayed.OccurredAt)
   ORDER BY SongsPlayed.Total DESC
   ```
 
