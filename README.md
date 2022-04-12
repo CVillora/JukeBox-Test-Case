@@ -172,6 +172,8 @@ The model with all the relationships:
 
 ![Image](images/data-model.png)
 
+## Analytics Challenges
+
 Now that we have the relational model in place we are able to answer the questions previously asked.
 The easiest and fastest way to get these answers is to write SQL queries to get the results.
 However, you can hook a BI tool to query the model and build your own reports as I demostrated using PowerBI.
@@ -272,7 +274,14 @@ Another point to consider will be **performance**, we should analyse writing per
 This process can help us to double check our indexing strategy or the way we struture the data.
 
 Finally, another point to take into account will be showing and sharing our model with the teams that are going to consume it. Explain what we have done, how they can use it,
-and let them play with it by themselves. Sometimes others will bring questions or cases we haven't thought about so it's a good test for us.
+and let them play with it by themselves. Sometimes others will bring questions or cases we haven't thought about so it's a good trial for us.
+Also, if they are using tool like Looker to grab data from the model is a good time to test things like connectivity, permissions, etc.
 Having monitoring helps a lot here, so we can track a "real" usage of our model.
 
 If after all these steps we are happy with the results, we should be able to replicate our pipeline in a production environment painlessly.
+
+A nice thing to have would be to setup **alerting** around our writes so we have this extra level of visibility around our pipeline.\
+i.e. receive a notification when:
+- Failed to write into one of the tables.
+- Timeout connections. Connections failed.
+- Failed to process an event because a property is missing.
