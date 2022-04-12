@@ -252,22 +252,22 @@ An example of how we could build this table would be:
 WITH Sales
 AS (
     SELECT Allocations.Id,
-		   Customers.Id,
-		   Devices.Id,
-		   Payments.Id,
-		   IFF(Allocations.Ocurred At > Payments.OccurredAt, Allocations.OccurredAt, Payments.OccurredAt) AS SaleDate,
+           Customers.Id,
+           Devices.Id,
+           Payments.Id,
+           IFF(Allocations.Ocurred At > Payments.OccurredAt, Allocations.OccurredAt, Payments.OccurredAt) AS SaleDate,
     FROM Allocations
-	  INNER JOIN Locations ON Locations.Id = Allocations.LocationId
-	  INNER JOIN Customers ON Customers.Id = Locations.CustomerId
-	  INNER JOIN Devices ON Devices.Id = Allocations.DeviceId
-	  INNER JOIN Payments ON Payments.DeviceId = Allocations.PaymentId --(this is if we can link payments to devices, otherwise the join would be with customerId)
+     INNER JOIN Locations ON Locations.Id = Allocations.LocationId
+     INNER JOIN Customers ON Customers.Id = Locations.CustomerId
+     INNER JOIN Devices ON Devices.Id = Allocations.DeviceId
+     INNER JOIN Payments ON Payments.DeviceId = Allocations.PaymentId --(this is if we can link payments to devices, otherwise the join would be with customerId)
 	WHERE Payments.Amount > Device.Price
 )
 SELECT AllocationId,
-	   CustomerId,
-	   DeviceId,
-	   PaymentId,
-	   OccurredAt
+       CustomerId,
+       DeviceId,
+       PaymentId,
+       OccurredAt
   FROM Sales
 ```
 ### Data model
@@ -292,14 +292,14 @@ FROM Sales
 
 ```sql
 SELECT Agents.Name,
-	   MONTH(SongsPlayed.OccurredAt) AS [Month],
-	   SongsPlayed.Total
+       MONTH(SongsPlayed.OccurredAt) AS [Month],
+       SongsPlayed.Total
   FROM Agents
-    INNER JOIN Allocations ON Agents.Id = Allocations.AgentId
-    INNER JOIN Device ON Allocations.DeviceId = Devices.Id
-    INNER JOIN SongsPlayed ON Devices.Id = SongsPlayed.DeviceId
+   INNER JOIN Allocations ON Agents.Id = Allocations.AgentId
+   INNER JOIN Device ON Allocations.DeviceId = Devices.Id
+   INNER JOIN SongsPlayed ON Devices.Id = SongsPlayed.DeviceId
   GROUP BY Agents.Name,
-	       MONTH(SongsPlayed.OccurredAt)
+           MONTH(SongsPlayed.OccurredAt)
   ORDER BY SongsPlayed.Total DESC
   ```
 
@@ -307,7 +307,7 @@ SELECT Agents.Name,
 
 ```sql
 SELECT SUM(Amount) AS TotalCashReceived,
-	   OccurredAt
+       OccurredAt
   FROM Payments
   GROUP BY OccurredAt
 ```
@@ -316,7 +316,7 @@ SELECT SUM(Amount) AS TotalCashReceived,
 
 ```sql
 SELECT SUM(Price) AS TotalSpent,
-	   OccurredAt
+       OccurredAt
   FROM Devices
   GROUP BY OccurredAt
 ```
@@ -346,19 +346,19 @@ FROM Devices
 
 ```sql
 SELECT SUM(Amount) - SUM(Price) as NetCash
-	   Payments.OccurredAt
+       Payments.OccurredAt
   FROM Payments
-    INNER JOIN Devices ON Devices.Id = Payments.DeviceId
+   INNER JOIN Devices ON Devices.Id = Payments.DeviceId
   GROUP BY Payments.OccurredAt
 ```
 
 4) `Sales over time` for "MusicMaker3000" and comparison against other products
 ```sql
 SELECT COUNT(*) AS Sales,
-	   Devices.Name,
-	   Sales.OccurredAt,
+       Devices.Name,
+       Sales.OccurredAt,
   FROM Sales
-    INNER JOIN Devices ON Device.Id = Sales.DeviceId
+   INNER JOIN Devices ON Device.Id = Sales.DeviceId
   GROUP BY Devices.Name, Sales.OccurredAt
   ```
 
