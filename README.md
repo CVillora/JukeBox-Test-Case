@@ -13,7 +13,107 @@ As a leader of the Analytics team at Jukebox Inc, I've being asked to write a pl
 
 The plan is to build a **scalable**, **clean** and **easy to use** *normalised* data model to help others to answer these questions avoiding the need of building multiple models in order to do so.
 
-Knowing that we are going to receive multiple events into our warehouse, we could use jobs, tasks (stored procedures, dbt scripts) or other kind of data processing mechanism
+### Event List
+
+Sale.CustomerRegistered
+```json
+{
+  "CustomerId": "123",
+  "CustomerName": "TESTNAME",
+  "LegalAddress": "TESTADDRESS",
+  "CustomerPhoneNumber": "TESTPHONE",
+  "CustomerIdentityNumber": "TESTNUMBER",
+  "OccurredAt": "01/01/01"
+}
+```
+
+Sale.LocationRegistered
+```json
+{
+  "LocationId": "123",
+  "CustomerId": "456",
+  "Latitude": "TESTLATITUDE",
+  "Longitude": "TESTLONGITUDE",
+  "Address": "TESTADDRESS",
+  "ContactName": "TESTNAME",
+  "ContactPhoneNumber": "TESTPHONE",
+  "OccurredAt": "01/01/01"
+}
+```
+
+Sale.DeviceAllocated
+```json
+{
+  "DeviceId": "123",
+  "LocationAllocatedId": "456",
+  "SellingAgent": {
+    "AgentId": "234",
+    "AgentName": "TESTAGENT"
+  },
+  "DeviceDetails": {
+    "DevicePrice": 2535,
+    "DeviceName": "TESTNAME",
+    "Id": "123",
+  },
+  "OccurredAt": "01/01/01"
+}
+```
+
+Payment.PaymentReceived
+```json
+{
+  "PaymentId": "123",
+  "PaymentAmount": 640,
+  "OccurredAt": "01/01/01"
+}
+```
+
+Music.SongListened
+```json
+{
+  "SongId": "123",
+  "SongCompleted": true,
+  "OccurredAt": "01/01/01"
+}
+```
+
+Music.SongPublished
+```json
+{
+  "SongId": "123",
+  "SongDetails": {
+    "ArtistName": "TESTNAME",
+    "SongName": "TESTNAME",
+    "AlbumName": "TESTNAME",
+    "SongLength": 180,
+    "SongSizeMb": 78,
+  },
+  "OccurredAt": "01/01/01"
+}
+```
+
+Music.SongRemoved
+```json
+{
+  "SongId": "123",
+  "OccurredAt": "01/01/01"
+}
+```
+
+Logistic.DevicePurchased
+```json
+{
+  "DeviceId": "123",
+  "DeviceDetails": {
+    "DevicePrice": 250,
+    "DeviceName": "TESTNAME",
+    "Id": "123"
+  },
+  "OccurredAt": "01/01/01"
+}
+```
+
+Knowing that we are going to receive multiple events (JSON format) into our warehouse, we could use jobs, tasks (stored procedures, dbt scripts) or other kind of data processing mechanism
 to process these events and send the data to the respective tables within the model that we planning to build.
 
 ### Few assumptions prior building the model:
@@ -27,10 +127,13 @@ to process these events and send the data to the respective tables within the mo
 |-------------|
 | Id (PK) |
 | Name |
-| IdentityNumber |
-| PhoneNumber |
+| IdentityNumber* |
+| PhoneNumber* |
 | LegalAddress |
 | OccurredAt |
+
+*These fields can be considered PII data and we should examine if they are relevant for analytical purposes. If yes, we could obfuscate these columns using **dynamic data masking** in SQL.
+Otherwise, the best would be to exclude these fields from the processing tasks.
 
 Although CustomerRegistered event has properties like `CustomerName` we don't need to keep the word "Customer" in our table as it would be redundant.\
 This approach will be used across all tables for this model.
@@ -45,7 +148,7 @@ This approach will be used across all tables for this model.
 | OccurredAt |
 
 Locations are directly linked to Customers so it makes sense to have a column that stores a relationship to our Customers table.\
-Also notice that we are not storing `ContactName` and `ContactPhoneNumber` from **Sale.LocationRegistered** event in our Location table as this information is already stored in our Customer table\
+Also notice that we are not storing `ContactName` and `ContactPhoneNumber` from **Sale.LocationRegistered** event in our Locations table as this information is already stored in our Customers table\
 *(assuming that contact and customer here have the same meaning)*
 
 | Allocations |
@@ -130,7 +233,7 @@ if in the future we add this song again we just need to change is value back to 
 **Songs are *played from a device*, however the **songsListened** event does not have any property related to devices so
 in order to know what device is playing these songs we will need to include at least `deviceId` to the event.
 
-***`SongCompleted` property is not clear to me, is it a *boolean* that says if a song is completed? if that's the case we would care only about events where this value is true.
+***`SongCompleted` property is not clear to me, is it a *boolean* that says if a song is completed? if that's the case we would write only to this table when the data from the events is relevant to us.
 
 | Sales |
 |-------------|
@@ -218,8 +321,24 @@ SELECT SUM(Price) AS TotalSpent,
   GROUP BY OccurredAt
 ```
 
-- 3.3 I'm going to use here a lifeline and talk to the finance team in order to understand what they understand for forecast.\
-Is it a moving average a forecast? do they want a linear regresion? Not sure, depending on how complex the task is I may need ask for some help from a DS and pair up and learn how to do it.
+- 3.3 Forecast of the above\
+Is it a moving average a forecast? do they want a linear regresion? for this particular point it would be better to speak with Finance team and get alignment on the expectations around forecasts, so that we all talk about ubiquitous language when it comes to forecasting.
+This is the point where we'll benefit from talking with Data Scientists and learn from them. However, assuming that I cannot get help from anyone and I have to do this task by myself I would go for
+the **moving average calculation** as I think this calculation will bring a good perspective of the cash received/spent along the time. Giving us the opportunity to foresee possible trends.
+This two scripts are calculating a 15 days moving average from each of the tables:
+```sql
+SELECT Amount,
+       OccurredAt,
+       AVG([Amount]) OVER ( ORDER BY [OccurredAt] ROWS BETWEEN 7 PRECEDING AND 7 FOLLOWING) FifteenDayMovAvg
+FROM Payments
+```
+
+```sql
+SELECT Price,
+       OccurredAt,
+       AVG([Amount]) OVER ( ORDER BY [OccurredAt] ROWS BETWEEN 7 PRECEDING AND 7 FOLLOWING) FifteenDayMovAvg
+FROM Devices
+```
 
 - 3.4 cash received vs expected cash received\
  If we consider expected **cash received** as the minimum cash received to cover the cost of the **device** we could make a calculation to get the `net cash`.\
@@ -275,7 +394,7 @@ This process can help us to double check our indexing strategy or the way we str
 
 Finally, another point to take into account will be showing and sharing our model with the teams that are going to consume it. Explain what we have done, how they can use it,
 and let them play with it by themselves. Sometimes others will bring questions or cases we haven't thought about so it's a good trial for us.
-Also, if they are using tool like Looker to grab data from the model is a good time to test things like connectivity, permissions, etc.
+Besides, if they are using tool like Looker to grab data from the model is a good time to test things like connectivity, permissions, security, etc.
 Having monitoring helps a lot here, so we can track a "real" usage of our model.
 
 If after all these steps we are happy with the results, we should be able to replicate our pipeline in a production environment painlessly.
